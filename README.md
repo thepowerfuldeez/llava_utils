@@ -7,6 +7,8 @@ In addition, latest LLaVA-1.6 doesn't support yet (as on 06.02.2024) straight in
 
 This repository presents one-file utils file that helps to access official LLaVA repository from any source, without the need to setup gradio demo and run http model worker.
 
+In addition, it provides correct image token number calculation, used for input prompt. 
+
 ## Quick start
 
 ### Install required libraries
