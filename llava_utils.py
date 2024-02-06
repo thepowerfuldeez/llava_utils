@@ -74,6 +74,7 @@ def generate(model, tokenizer, prompt: str, image_args: dict, num_image_tokens: 
     max_context_length = getattr(model.config, 'max_position_embeddings', 8192)
     max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
     stop_str = params.get("stop", None)
+    num_beams = params.get("num_beams", 1)
     do_sample = True if temperature > 0.001 else False
 
     input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(model.device)
@@ -81,7 +82,13 @@ def generate(model, tokenizer, prompt: str, image_args: dict, num_image_tokens: 
     # stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
     
     # steamer is responsible for tokenizer.decode to convert output ids into text
-    streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True, timeout=15)
+    if num_beams > 1:
+        print_output = False
+        print("print_output cannot be True with num_beams > 1")
+    if print_output:
+        streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True, timeout=15)
+    else:
+        streamer = None
 
     max_new_tokens = min(max_new_tokens, max_context_length - input_ids.shape[-1] - num_image_tokens)
 
@@ -91,17 +98,22 @@ def generate(model, tokenizer, prompt: str, image_args: dict, num_image_tokens: 
         temperature=temperature,
         top_p=top_p,
         max_new_tokens=max_new_tokens,
+        num_beams=num_beams,
         streamer=streamer,
         use_cache=True,
         **image_args
     )
-    thread = Thread(target=model.generate, kwargs=generation_kwargs)
-    thread.start()
-    generated_text = ""
-    for new_text in streamer:
-        if print_output:
-            print(new_text, end="")
-        generated_text += new_text
-        if (generated_text and stop_str) and generated_text.endswith(stop_str):
-            generated_text = generated_text[:-len(stop_str)]
+
+    if not print_output:
+        generated_text = tokenizer.batch_decode(model.generate(**generation_kwargs), skip_special_tokens=True)[0]
+    else:
+        thread = Thread(target=model.generate, kwargs=generation_kwargs)
+        thread.start()
+        generated_text = ""
+        for new_text in streamer:
+            if print_output:
+                print(new_text, end="")
+            generated_text += new_text
+            if (generated_text and stop_str) and generated_text.endswith(stop_str):
+                generated_text = generated_text[:-len(stop_str)]
     return generated_text
