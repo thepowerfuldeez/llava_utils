@@ -9,6 +9,10 @@ This repository presents one-file utils file that helps to access official LLaVA
 
 In addition, it provides correct image token number calculation, used for input prompt. 
 
+### Changelog
+- 06.02: Updated debug.ipynb, now it contains code to run MMMU benchmark
+
+
 ## Quick start
 
 ### Install required libraries
