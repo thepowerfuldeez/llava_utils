@@ -82,7 +82,7 @@ def generate(model, tokenizer, prompt: str, image_args: dict, num_image_tokens: 
     # stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
     
     # steamer is responsible for tokenizer.decode to convert output ids into text
-    if num_beams > 1:
+    if num_beams > 1 and print_output is True:
         print_output = False
         print("print_output cannot be True with num_beams > 1")
     if print_output:
